@@ -17,8 +17,9 @@ import {
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Copy, ExternalLink, CheckCircle } from 'lucide-react';
+import { Loader2, Copy, ExternalLink, CheckCircle, Search } from 'lucide-react';
 import { nowPayments } from '@/lib/nowpayments';
 import { createClient } from '@/lib/supabase-client';
 
@@ -40,6 +41,8 @@ export function CryptoPaymentModal({
   const [selectedCurrency, setSelectedCurrency] = useState('btc');
   const [paymentData, setPaymentData] = useState<any>(null);
   const [currencies, setCurrencies] = useState<string[]>(['btc', 'eth', 'usdt', 'usdc']);
+  const [allCurrencies, setAllCurrencies] = useState<string[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [step, setStep] = useState<'select' | 'payment' | 'processing'>('select');
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -50,6 +53,7 @@ export function CryptoPaymentModal({
       // Reset state when modal opens
       setStep('select');
       setPaymentData(null);
+      setSearchQuery('');
     }
   }, [isOpen]);
 
@@ -66,16 +70,28 @@ export function CryptoPaymentModal({
   const loadCurrencies = async () => {
     try {
       const availableCurrencies = await nowPayments.getAvailableCurrencies();
-      // Filter for popular currencies
+      setAllCurrencies(availableCurrencies);
+
+      // Show popular currencies by default
       const popularCurrencies = ['btc', 'eth', 'usdt', 'usdc', 'bnb', 'xrp', 'doge', 'ltc', 'ada', 'matic'];
       const filtered = availableCurrencies.filter(c => popularCurrencies.includes(c));
       if (filtered.length > 0) {
         setCurrencies(filtered);
+      } else {
+        // Fallback to first 10 currencies if popular ones not found
+        setCurrencies(availableCurrencies.slice(0, 10));
       }
     } catch (error) {
       console.error('Error loading currencies:', error);
     }
   };
+
+  const filteredCurrencies = searchQuery
+    ? allCurrencies.filter(currency =>
+        currency.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getCurrencyName(currency).toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : currencies;
 
   const createTransactionRecord = async (payment: any) => {
     try {
@@ -226,18 +242,66 @@ export function CryptoPaymentModal({
           <div className="space-y-4">
             <div className="space-y-2">
               <Label>Select Cryptocurrency</Label>
+
+              {/* Search Input */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search cryptocurrencies..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+
+              {/* Currency Selection */}
               <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
-                  {currencies.map((currency) => (
+                <SelectContent className="max-h-64">
+                  {filteredCurrencies.map((currency) => (
                     <SelectItem key={currency} value={currency}>
-                      {getCurrencyName(currency)}
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{currency.toUpperCase()}</span>
+                        <span className="text-muted-foreground">{getCurrencyName(currency)}</span>
+                      </div>
                     </SelectItem>
                   ))}
+                  {filteredCurrencies.length === 0 && searchQuery && (
+                    <div className="px-2 py-1 text-sm text-muted-foreground">
+                      No cryptocurrencies found
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
+
+              {searchQuery && (
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Showing {filteredCurrencies.length} of {allCurrencies.length} currencies
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSearchQuery('')}
+                    className="text-xs h-6"
+                  >
+                    Clear
+                  </Button>
+                </div>
+              )}
+
+              {!searchQuery && allCurrencies.length > currencies.length && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrencies(allCurrencies)}
+                  className="w-full text-xs"
+                >
+                  Show All {allCurrencies.length} Currencies
+                </Button>
+              )}
             </div>
 
             <div className="bg-muted p-4 rounded-lg">
