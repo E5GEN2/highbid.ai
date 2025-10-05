@@ -170,10 +170,20 @@ function verifyWebhookSignature(body: string, signature: string | null): boolean
 }
 
 function extractUserIdFromOrderId(orderId: string): string | null {
-  // Order_id format: "topup-{timestamp}-{userId}"
-  const parts = orderId.split('-');
-  if (parts.length === 3 && parts[0] === 'topup') {
-    return parts[2]; // Return the user ID part
+  // Order_id format: "topup-{timestamp}-{userId}" where userId is a UUID with dashes
+  // Example: "topup-1759701483198-c740c555-758b-4b16-8ac9-196cd040d580"
+
+  if (!orderId.startsWith('topup-')) {
+    return null;
   }
+
+  // Remove "topup-" prefix and find the timestamp
+  const withoutPrefix = orderId.substring(6); // Remove "topup-"
+  const timestampMatch = withoutPrefix.match(/^(\d+)-(.+)$/);
+
+  if (timestampMatch) {
+    return timestampMatch[2]; // Return the user ID part (everything after timestamp)
+  }
+
   return null;
 }
