@@ -28,6 +28,8 @@ export async function POST(request: NextRequest) {
     console.log('🔔 NowPayments webhook received:', JSON.stringify(webhook, null, 2));
     console.log('🔄 Payment status:', webhook.payment_status);
     console.log('📝 Order ID:', webhook.order_id);
+    console.log('💳 Webhook Payment ID:', webhook.payment_id);
+    console.log('💰 Payment Amount:', webhook.price_amount);
 
 
     // Verify webhook signature
@@ -91,9 +93,22 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
       console.log(`Updated balance for user ${userId}: $${newBalance}`);
     }
 
-    // Update existing transaction status
-    console.log(`🔄 Updating transaction with payment_id: ${webhook.payment_id}`);
+    // First try to find transaction by payment_id
+    console.log(`🔍 Looking for transaction with payment_id: ${webhook.payment_id}`);
 
+    const { data: transactionByPaymentId, error: findError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('payment_id', webhook.payment_id)
+      .eq('user_id', userId);
+
+    if (findError) {
+      console.error('❌ Error finding transaction by payment_id:', findError);
+    } else {
+      console.log(`📋 Found ${transactionByPaymentId?.length || 0} transactions with payment_id ${webhook.payment_id}:`, transactionByPaymentId);
+    }
+
+    // Update transaction status using payment_id
     const { data: updateData, error: transactionError } = await supabase
       .from('transactions')
       .update({
@@ -101,6 +116,7 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
         updated_at: new Date().toISOString()
       })
       .eq('payment_id', webhook.payment_id)
+      .eq('user_id', userId)
       .select();
 
     if (transactionError) {
@@ -110,13 +126,15 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
     } else {
       console.log(`⚠️ No transaction found with payment_id: ${webhook.payment_id}`);
 
-      // Check what transactions exist for this user
+      // Check what transactions exist for this user for debugging
       const { data: allTransactions } = await supabase
         .from('transactions')
-        .select('payment_id, status, description')
-        .eq('user_id', userId);
+        .select('payment_id, status, description, amount, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(5);
 
-      console.log('📋 All transactions for user:', allTransactions);
+      console.log('📋 Recent transactions for user:', allTransactions);
     }
 
     console.log(`Successfully processed payment for user ${userId}: +$${webhook.price_amount}`);

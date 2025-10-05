@@ -134,14 +134,16 @@ export function CryptoPaymentModal({
     try {
       const supabase = createClient();
 
-      // NowPayments invoice response has different field names than direct payment
-      const paymentId = payment.payment_id || payment.id || `invoice-${payment.invoice_id}`;
+      // For invoices, use the actual payment_id that will match webhook
+      // Don't create custom IDs as they won't match webhook payment_id
+      const paymentId = payment.payment_id;
 
       console.log('Creating transaction record:', {
         user_id: userId,
         amount: amount,
         payment_id: paymentId,
-        payment_url: payment.invoice_url
+        payment_url: payment.invoice_url,
+        full_payment_response: payment
       });
 
       const { data, error } = await supabase.from('transactions').insert({
