@@ -10,16 +10,22 @@ import { useToast } from '@/hooks/use-toast';
 import { Wallet, CreditCard, TrendingUp, Bitcoin } from 'lucide-react';
 import { CryptoPaymentModal } from '@/components/CryptoPaymentModal';
 import { useSearchParams } from 'next/navigation';
+import { createClient } from '@/lib/supabase-client';
 
 export default function Balance() {
   const { toast } = useToast();
   const searchParams = useSearchParams();
-  const [selectedAmount, setSelectedAmount] = useState('50');
+  const [selectedAmount, setSelectedAmount] = useState('25');
   const [customAmount, setCustomAmount] = useState('');
-  const [currentBalance, setCurrentBalance] = useState(125.50);
+  const [currentBalance, setCurrentBalance] = useState(0);
   const [showCryptoModal, setShowCryptoModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
+    loadUserBalance();
+    loadTransactions();
+
     // Check for payment status from URL params
     const paymentStatus = searchParams.get('payment');
     if (paymentStatus === 'success') {
@@ -39,13 +45,66 @@ export default function Balance() {
     }
   }, [searchParams, toast]);
 
+  const loadUserBalance = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+
+      const { data: balanceData, error } = await supabase
+        .from('user_balances')
+        .select('balance')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading balance:', error);
+      } else if (balanceData) {
+        setCurrentBalance(parseFloat(balanceData.balance));
+      }
+      // If no balance record exists, it stays at 0
+    } catch (error) {
+      console.error('Error loading user balance:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const loadTransactions = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) return;
+
+      const { data: transactionData, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('Error loading transactions:', error);
+      } else {
+        setTransactions(transactionData || []);
+      }
+    } catch (error) {
+      console.error('Error loading transactions:', error);
+    }
+  };
+
   const handleTopUp = () => {
     const amount = parseFloat(selectedAmount === 'custom' ? customAmount : selectedAmount);
 
-    if (!amount || amount < 10) {
+    if (!amount || amount <= 0) {
       toast({
         title: 'Invalid Amount',
-        description: 'Minimum top-up amount is $10',
+        description: 'Please enter a valid amount',
         variant: 'destructive',
       });
       return;
@@ -61,6 +120,9 @@ export default function Balance() {
       title: 'Balance Updated',
       description: `$${amount} has been added to your balance`,
     });
+    // Reload the actual balance from database
+    loadUserBalance();
+    loadTransactions();
   };
 
   return (
@@ -79,7 +141,9 @@ export default function Balance() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">${currentBalance.toFixed(2)}</p>
+            <p className="text-3xl font-bold">
+              {isLoading ? '...' : `$${currentBalance.toFixed(2)}`}
+            </p>
           </CardContent>
         </Card>
 
@@ -91,7 +155,7 @@ export default function Balance() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">$42.30</p>
+            <p className="text-3xl font-bold">$0.00</p>
             <p className="text-xs text-muted-foreground mt-1">Total spent</p>
           </CardContent>
         </Card>
@@ -100,11 +164,11 @@ export default function Balance() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
-              Credits Used
+              API Usage
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">8,450</p>
+            <p className="text-3xl font-bold">0</p>
             <p className="text-xs text-muted-foreground mt-1">API calls</p>
           </CardContent>
         </Card>
@@ -120,7 +184,7 @@ export default function Balance() {
             <Label>Select Amount</Label>
             <RadioGroup value={selectedAmount} onValueChange={setSelectedAmount}>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {['10', '50', '100', '200'].map((amount) => (
+                {['5', '25', '50', '100'].map((amount) => (
                   <div key={amount} className="relative">
                     <RadioGroupItem
                       value={amount}
@@ -156,7 +220,7 @@ export default function Balance() {
                       setSelectedAmount('custom');
                     }}
                     className="flex-1 text-foreground bg-background"
-                    min="5"
+                    min="0.01"
                     onClick={(e) => e.stopPropagation()}
                   />
                 </Label>
@@ -191,22 +255,23 @@ export default function Balance() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {[
-              { date: '2025-01-15', description: 'API Usage', amount: -12.50, type: 'debit' },
-              { date: '2025-01-10', description: 'Top Up', amount: 50.00, type: 'credit' },
-              { date: '2025-01-08', description: 'API Usage', amount: -8.20, type: 'debit' },
-              { date: '2025-01-05', description: 'Top Up', amount: 100.00, type: 'credit' },
-            ].map((transaction, i) => (
-              <div key={i} className="flex justify-between items-center py-3 border-b last:border-0">
-                <div>
-                  <p className="font-medium">{transaction.description}</p>
-                  <p className="text-sm text-muted-foreground">{transaction.date}</p>
+            {transactions.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8">No transactions yet</p>
+            ) : (
+              transactions.map((transaction, i) => (
+                <div key={transaction.id || i} className="flex justify-between items-center py-3 border-b last:border-0">
+                  <div>
+                    <p className="font-medium">{transaction.description || 'Transaction'}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(transaction.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <p className={`font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
+                    {transaction.type === 'credit' ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}
+                  </p>
                 </div>
-                <p className={`font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
-                  {transaction.type === 'credit' ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}
-                </p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>
