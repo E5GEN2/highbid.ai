@@ -37,9 +37,10 @@ export default function Signup() {
       await signup(email, password);
       toast({
         title: 'Success',
-        description: 'Account created successfully! Please check your email to confirm.',
+        description: 'Account created successfully! Redirecting to dashboard...',
       });
-      // Don't redirect immediately for signup - user needs to confirm email
+      // Redirect immediately since email confirmation is disabled
+      router.push('/dashboard/generate');
     } catch (error: any) {
       toast({
         title: 'Error',
