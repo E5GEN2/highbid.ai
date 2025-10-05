@@ -134,9 +134,9 @@ export function CryptoPaymentModal({
     try {
       const supabase = createClient();
 
-      // For invoices, use the actual payment_id that will match webhook
-      // Don't create custom IDs as they won't match webhook payment_id
-      const paymentId = payment.payment_id;
+      // For invoices, NowPayments doesn't return payment_id initially
+      // Use order_id for matching instead, which is consistent
+      const paymentId = payment.id; // Invoice ID for initial tracking
 
       console.log('Creating transaction record:', {
         user_id: userId,
@@ -151,7 +151,7 @@ export function CryptoPaymentModal({
         type: 'credit',
         amount: amount,
         description: `Crypto top-up: $${amount} (${selectedCurrency.toUpperCase()})`,
-        payment_id: paymentId,
+        payment_id: paymentId, // Initial invoice ID, will be updated by webhook
         payment_url: payment.invoice_url,
         status: 'pending'
       });
@@ -190,6 +190,8 @@ export function CryptoPaymentModal({
         order_id: `topup-${Date.now()}-${userId}`,
         order_description: `Balance top-up: $${amount}`,
       });
+
+      console.log('📋 Invoice creation response:', payment);
 
       setPaymentData(payment);
       setStep('payment');

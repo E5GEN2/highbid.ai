@@ -93,49 +93,53 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
       console.log(`Updated balance for user ${userId}: $${newBalance}`);
     }
 
-    // First try to find transaction by payment_id
-    console.log(`🔍 Looking for transaction with payment_id: ${webhook.payment_id}`);
+    // Find transaction by order_id since payment_id is only available after payment
+    console.log(`🔍 Looking for transaction with order_id: ${webhook.order_id}`);
 
-    const { data: transactionByPaymentId, error: findError } = await supabase
+    // Extract order timestamp from order_id to match with transaction created around that time
+    const orderTimestamp = webhook.order_id.split('-')[1];
+    const orderTime = new Date(parseInt(orderTimestamp));
+    const timeBuffer = 5 * 60 * 1000; // 5 minutes buffer
+    const startTime = new Date(orderTime.getTime() - timeBuffer);
+    const endTime = new Date(orderTime.getTime() + timeBuffer);
+
+    const { data: matchingTransactions, error: findError } = await supabase
       .from('transactions')
       .select('*')
-      .eq('payment_id', webhook.payment_id)
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .eq('status', 'pending')
+      .eq('amount', webhook.price_amount)
+      .gte('created_at', startTime.toISOString())
+      .lte('created_at', endTime.toISOString());
 
     if (findError) {
-      console.error('❌ Error finding transaction by payment_id:', findError);
+      console.error('❌ Error finding transaction by order criteria:', findError);
     } else {
-      console.log(`📋 Found ${transactionByPaymentId?.length || 0} transactions with payment_id ${webhook.payment_id}:`, transactionByPaymentId);
+      console.log(`📋 Found ${matchingTransactions?.length || 0} matching transactions:`, matchingTransactions);
     }
 
-    // Update transaction status using payment_id
-    const { data: updateData, error: transactionError } = await supabase
-      .from('transactions')
-      .update({
-        status: 'completed',
-        updated_at: new Date().toISOString()
-      })
-      .eq('payment_id', webhook.payment_id)
-      .eq('user_id', userId)
-      .select();
-
-    if (transactionError) {
-      console.error('❌ Error updating transaction:', transactionError);
-    } else if (updateData && updateData.length > 0) {
-      console.log(`✅ Transaction updated successfully:`, updateData[0]);
-    } else {
-      console.log(`⚠️ No transaction found with payment_id: ${webhook.payment_id}`);
-
-      // Check what transactions exist for this user for debugging
-      const { data: allTransactions } = await supabase
+    // Update transaction status using the best match
+    const transactionToUpdate = matchingTransactions?.[0];
+    if (transactionToUpdate) {
+      const { data: updateData, error: transactionError } = await supabase
         .from('transactions')
-        .select('payment_id, status, description, amount, created_at')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(5);
+        .update({
+          status: 'completed',
+          payment_id: webhook.payment_id, // Store the final payment_id from webhook
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', transactionToUpdate.id)
+        .select();
 
-      console.log('📋 Recent transactions for user:', allTransactions);
+      if (transactionError) {
+        console.error('❌ Error updating transaction:', transactionError);
+      } else {
+        console.log(`✅ Transaction updated successfully:`, updateData?.[0]);
+      }
+    } else {
+      console.log(`⚠️ No matching transaction found for order: ${webhook.order_id}`);
     }
+
 
     console.log(`Successfully processed payment for user ${userId}: +$${webhook.price_amount}`);
   } catch (error) {
