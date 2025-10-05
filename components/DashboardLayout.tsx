@@ -16,7 +16,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Key, Wallet, LogOut, Shield, BookOpen } from 'lucide-react';
+import { Sparkles, Key, Wallet, LogOut, BookOpen } from 'lucide-react';
 
 const DashboardSidebar = () => {
   const { user } = useAuth();
@@ -28,10 +28,6 @@ const DashboardSidebar = () => {
     { title: 'Balance & Top-up', url: '/dashboard/balance', icon: Wallet },
     { title: 'Documentation', url: '/docs', icon: BookOpen },
   ];
-
-  const adminItems = user?.role === 'admin' 
-    ? [{ title: 'Admin Panel', url: '/admin', icon: Shield }]
-    : [];
 
   return (
     <Sidebar collapsible="icon">
@@ -57,26 +53,6 @@ const DashboardSidebar = () => {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        {adminItems.length > 0 && (
-          <SidebarGroup>
-            <SidebarGroupLabel>Admin</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <Link href={item.url}>
-                        <item.icon className="h-4 w-4" />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
       </SidebarContent>
     </Sidebar>
   );

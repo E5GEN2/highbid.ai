@@ -31,7 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser({
           id: session.user.id,
           email: session.user.email!,
-          role: session.user.email?.includes('admin') ? 'admin' : 'user'
+          role: 'user' // Regular users always get 'user' role, admin uses separate login
         });
       }
       setIsLoading(false);
