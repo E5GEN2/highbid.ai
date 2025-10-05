@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase-client';
+import type { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 interface User {
   id: string;
@@ -11,7 +13,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   signup: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,41 +21,70 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
-    // Check for stored user (mock)
-    const storedUser = localStorage.getItem('mockUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
-  }, []);
+    // Get initial session
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email!,
+          role: session.user.email?.includes('admin') ? 'admin' : 'user'
+        });
+      }
+      setIsLoading(false);
+    };
+
+    getSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email!,
+            role: session.user.email?.includes('admin') ? 'admin' : 'user'
+          });
+        } else {
+          setUser(null);
+        }
+        setIsLoading(false);
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, [supabase.auth]);
 
   const login = async (email: string, password: string) => {
-    // Mock login
-    const mockUser: User = {
-      id: '1',
+    const { error } = await supabase.auth.signInWithPassword({
       email,
-      role: email.includes('admin') ? 'admin' : 'user'
-    };
-    setUser(mockUser);
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
   };
 
   const signup = async (email: string, password: string) => {
-    // Mock signup
-    const mockUser: User = {
-      id: '1',
+    const { error } = await supabase.auth.signUp({
       email,
-      role: 'user'
-    };
-    setUser(mockUser);
-    localStorage.setItem('mockUser', JSON.stringify(mockUser));
+      password,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('mockUser');
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw new Error(error.message);
+    }
   };
 
   return (

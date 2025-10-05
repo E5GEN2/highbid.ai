@@ -29,10 +29,10 @@ export default function Login() {
         description: 'Logged in successfully!',
       });
       router.push('/dashboard/generate');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to login. Please try again.',
+        description: error.message || 'Failed to login. Please try again.',
         variant: 'destructive',
       });
     } finally {

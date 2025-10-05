@@ -37,13 +37,13 @@ export default function Signup() {
       await signup(email, password);
       toast({
         title: 'Success',
-        description: 'Account created successfully!',
+        description: 'Account created successfully! Please check your email to confirm.',
       });
-      router.push('/dashboard/generate');
-    } catch (error) {
+      // Don't redirect immediately for signup - user needs to confirm email
+    } catch (error: any) {
       toast({
         title: 'Error',
-        description: 'Failed to create account. Please try again.',
+        description: error.message || 'Failed to create account. Please try again.',
         variant: 'destructive',
       });
     } finally {
