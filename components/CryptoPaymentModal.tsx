@@ -28,6 +28,8 @@ interface CryptoPaymentModalProps {
   onClose: () => void;
   amount: number;
   onSuccess?: () => void;
+  existingPaymentUrl?: string;
+  existingPaymentId?: string;
 }
 
 export function CryptoPaymentModal({
@@ -35,6 +37,8 @@ export function CryptoPaymentModal({
   onClose,
   amount,
   onSuccess,
+  existingPaymentUrl,
+  existingPaymentId,
 }: CryptoPaymentModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -50,12 +54,21 @@ export function CryptoPaymentModal({
     if (isOpen) {
       loadCurrencies();
       getCurrentUser();
-      // Reset state when modal opens
-      setStep('select');
-      setPaymentData(null);
+      // Only reset search, but keep payment data for reuse
       setSearchQuery('');
+
+      // If existing payment URL provided, use it
+      if (existingPaymentUrl && existingPaymentId) {
+        setPaymentData({
+          invoice_url: existingPaymentUrl,
+          payment_id: existingPaymentId
+        });
+        setStep('payment');
+      } else if (!paymentData) {
+        setStep('select');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, existingPaymentUrl, existingPaymentId]);
 
   const getCurrentUser = async () => {
     try {
