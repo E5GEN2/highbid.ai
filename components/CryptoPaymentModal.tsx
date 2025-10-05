@@ -83,6 +83,10 @@ export function CryptoPaymentModal({
       }
     } catch (error) {
       console.error('Error loading currencies:', error);
+      // Set fallback currencies if API fails
+      const fallbackCurrencies = ['btc', 'eth', 'usdt', 'usdc', 'bnb', 'xrp', 'doge', 'ltc'];
+      setAllCurrencies(fallbackCurrencies);
+      setCurrencies(fallbackCurrencies);
     }
   };
 
@@ -108,6 +112,14 @@ export function CryptoPaymentModal({
         getCurrencyName(currency).toLowerCase().includes(searchQuery.toLowerCase())
       )
     : currencies;
+
+  // Auto-expand to all currencies when user starts searching
+  const displayCurrencies = searchQuery ? filteredCurrencies : currencies;
+
+  // Debug: Log current state
+  console.log('Search Query:', searchQuery);
+  console.log('All Currencies Count:', allCurrencies.length);
+  console.log('Display Currencies Count:', displayCurrencies.length);
 
   const createTransactionRecord = async (payment: any) => {
     try {
@@ -260,7 +272,7 @@ export function CryptoPaymentModal({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="max-h-64">
-                  {filteredCurrencies.map((currency) => (
+                  {displayCurrencies.map((currency) => (
                     <SelectItem key={currency} value={currency}>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{currency.toUpperCase()}</span>
@@ -268,7 +280,7 @@ export function CryptoPaymentModal({
                       </div>
                     </SelectItem>
                   ))}
-                  {filteredCurrencies.length === 0 && searchQuery && (
+                  {displayCurrencies.length === 0 && searchQuery && (
                     <div className="px-2 py-1 text-sm text-muted-foreground">
                       No cryptocurrencies found
                     </div>
@@ -279,7 +291,7 @@ export function CryptoPaymentModal({
               {searchQuery && (
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
-                    Showing {filteredCurrencies.length} of {allCurrencies.length} currencies
+                    Showing {displayCurrencies.length} of {allCurrencies.length} currencies
                   </p>
                   <Button
                     variant="outline"
