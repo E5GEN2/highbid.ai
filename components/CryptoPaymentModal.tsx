@@ -47,6 +47,9 @@ export function CryptoPaymentModal({
     if (isOpen) {
       loadCurrencies();
       getCurrentUser();
+      // Reset state when modal opens
+      setStep('select');
+      setPaymentData(null);
     }
   }, [isOpen]);
 
@@ -75,6 +78,17 @@ export function CryptoPaymentModal({
   };
 
   const handleCreatePayment = async () => {
+    // If payment already exists, just open it and go to payment step
+    if (paymentData?.invoice_url) {
+      setStep('payment');
+      window.open(paymentData.invoice_url, '_blank');
+      toast({
+        title: 'Payment Reopened',
+        description: 'Continue your payment in the opened window',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const payment = await nowPayments.createInvoice({
