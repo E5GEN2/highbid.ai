@@ -125,10 +125,13 @@ export function CryptoPaymentModal({
     try {
       const supabase = createClient();
 
+      // NowPayments invoice response has different field names than direct payment
+      const paymentId = payment.payment_id || payment.id || `invoice-${payment.invoice_id}`;
+
       console.log('Creating transaction record:', {
         user_id: userId,
         amount: amount,
-        payment_id: payment.payment_id,
+        payment_id: paymentId,
         payment_url: payment.invoice_url
       });
 
@@ -137,7 +140,7 @@ export function CryptoPaymentModal({
         type: 'credit',
         amount: amount,
         description: `Crypto top-up: $${amount} (${selectedCurrency.toUpperCase()})`,
-        payment_id: payment.payment_id,
+        payment_id: paymentId,
         payment_url: payment.invoice_url,
         status: 'pending'
       });
