@@ -35,7 +35,7 @@ const DashboardSidebar = () => {
     <Sidebar collapsible="icon">
       <SidebarContent>
         <div className="p-4 border-b">
-          <h2 className={`font-bold text-xl ${!open && 'hidden'}`}>ImageAI</h2>
+          <h2 className={`font-bold text-xl ${!open && 'hidden'}`}>Highbid.ai</h2>
         </div>
 
         <SidebarGroup>

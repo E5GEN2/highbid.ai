@@ -9,7 +9,7 @@ const Docs = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <Link to="/" className="text-2xl font-bold">ImageAI</Link>
+          <Link to="/" className="text-2xl font-bold">Highbid.ai</Link>
           <div className="flex gap-4">
             <Button variant="ghost" asChild>
               <Link to="/login">Login</Link>

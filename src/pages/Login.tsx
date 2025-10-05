@@ -42,7 +42,7 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">Welcome back</CardTitle>
-          <CardDescription>Login to your ImageAI account</CardDescription>
+          <CardDescription>Login to your Highbid.ai account</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

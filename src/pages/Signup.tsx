@@ -53,7 +53,7 @@ const Signup = () => {
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle className="text-2xl">Create an account</CardTitle>
-          <CardDescription>Get started with ImageAI today</CardDescription>
+          <CardDescription>Get started with Highbid.ai today</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

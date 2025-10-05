@@ -8,7 +8,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
             <h3 className="font-bold text-lg mb-4 bg-gradient-primary bg-clip-text text-transparent">
-              ImageAI
+              Highbid.ai
             </h3>
             <p className="text-sm text-muted-foreground">
               Next-generation AI image generation platform for developers.
@@ -44,7 +44,7 @@ const Footer = () => {
 
         <div className="flex flex-col md:flex-row justify-between items-center pt-8 border-t border-border">
           <p className="text-sm text-muted-foreground mb-4 md:mb-0">
-            © 2025 ImageAI. All rights reserved.
+            © 2025 Highbid.ai. All rights reserved.
           </p>
           <div className="flex gap-4">
             <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
