@@ -42,11 +42,11 @@ const ApiTokens = () => {
     { date: 'Jan 16', calls: 2100 },
   ];
 
-  const endpointUsageData = [
-    { endpoint: '/generate', calls: 8500 },
-    { endpoint: '/edit', calls: 3200 },
-    { endpoint: '/upscale', calls: 2100 },
-    { endpoint: '/variations', calls: 1800 },
+  const costBreakdownData = [
+    { category: 'Image Generation', cost: 85 },
+    { category: 'Image Editing', cost: 42 },
+    { category: 'Upscaling', cost: 28 },
+    { category: 'API Calls', cost: 15 },
   ];
 
   const handleCreateToken = () => {
@@ -169,15 +169,15 @@ const ApiTokens = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Activity className="h-5 w-5" />
-              Endpoint Usage
+              Cost Breakdown
             </CardTitle>
-            <CardDescription>Calls by endpoint</CardDescription>
+            <CardDescription>Spending by category</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={endpointUsageData}>
+              <BarChart data={costBreakdownData}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                <XAxis dataKey="endpoint" className="text-xs" />
+                <XAxis dataKey="category" className="text-xs" />
                 <YAxis className="text-xs" />
                 <Tooltip 
                   contentStyle={{ 
@@ -185,8 +185,9 @@ const ApiTokens = () => {
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px'
                   }}
+                  formatter={(value) => `$${value}`}
                 />
-                <Bar dataKey="calls" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="cost" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
