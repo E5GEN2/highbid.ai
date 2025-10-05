@@ -59,7 +59,7 @@ export default function Balance() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
+              <TrendingUp className="h-4 w-4" />
               Credits Used
             </CardTitle>
           </CardHeader>
@@ -130,11 +130,11 @@ export default function Balance() {
               <div className="flex items-center gap-3">
                 <CreditCard className="h-5 w-5" />
                 <div>
-                  <p className="font-medium">Visa ending in 4242</p>
-                  <p className="text-sm text-muted-foreground">Expires 12/2026</p>
+                  <p className="font-medium">NowPayments</p>
+                  <p className="text-sm text-muted-foreground">Pay with 150+ cryptocurrencies</p>
                 </div>
               </div>
-              <Button variant="outline" size="sm">Change</Button>
+              <Button variant="outline" size="sm">Pay with Crypto</Button>
             </div>
           </div>
 
