@@ -115,8 +115,9 @@ export default function Balance() {
                       setCustomAmount(e.target.value);
                       setSelectedAmount('custom');
                     }}
-                    className="flex-1"
+                    className="flex-1 text-foreground bg-background"
                     min="5"
+                    onClick={(e) => e.stopPropagation()}
                   />
                 </Label>
               </div>
