@@ -40,6 +40,7 @@ export async function middleware(request: NextRequest) {
     !request.nextUrl.pathname.startsWith('/auth') &&
     !request.nextUrl.pathname.startsWith('/admin') &&
     !request.nextUrl.pathname.startsWith('/docs') &&
+    !request.nextUrl.pathname.startsWith('/api/nowpayments/callback') &&
     request.nextUrl.pathname !== '/'
   ) {
     // no user, potentially respond by redirecting the user to the login page

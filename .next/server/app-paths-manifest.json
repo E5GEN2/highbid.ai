@@ -1,1 +1,3 @@
-{}
+{
+  "/api/nowpayments/callback/route": "app/api/nowpayments/callback/route.js"
+}
