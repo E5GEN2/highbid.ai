@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Copy, Trash2 } from 'lucide-react';
+import { Plus, Copy, Trash2, TrendingUp, Activity } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface Token {
   id: string;
@@ -29,6 +30,24 @@ const ApiTokens = () => {
   ]);
   const [newTokenName, setNewTokenName] = useState('');
   const [showNewToken, setShowNewToken] = useState(false);
+
+  // Mock data for charts
+  const dailyUsageData = [
+    { date: 'Jan 10', calls: 1200 },
+    { date: 'Jan 11', calls: 1800 },
+    { date: 'Jan 12', calls: 1500 },
+    { date: 'Jan 13', calls: 2200 },
+    { date: 'Jan 14', calls: 1900 },
+    { date: 'Jan 15', calls: 2400 },
+    { date: 'Jan 16', calls: 2100 },
+  ];
+
+  const endpointUsageData = [
+    { endpoint: '/generate', calls: 8500 },
+    { endpoint: '/edit', calls: 3200 },
+    { endpoint: '/upscale', calls: 2100 },
+    { endpoint: '/variations', calls: 1800 },
+  ];
 
   const handleCreateToken = () => {
     if (!newTokenName.trim()) {
@@ -77,7 +96,7 @@ const ApiTokens = () => {
     <div className="max-w-6xl mx-auto space-y-6">
       <div className="flex justify-between items-start">
         <div>
-          <h1 className="text-3xl font-bold mb-2">API Tokens</h1>
+          <h1 className="text-3xl font-bold mb-2">API</h1>
           <p className="text-muted-foreground">Manage your API keys and monitor usage</p>
         </div>
         <Button onClick={() => setShowNewToken(!showNewToken)}>
@@ -111,6 +130,68 @@ const ApiTokens = () => {
           </CardContent>
         </Card>
       )}
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Daily API Calls
+            </CardTitle>
+            <CardDescription>Last 7 days</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <LineChart data={dailyUsageData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="date" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="calls" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={{ fill: 'hsl(var(--primary))' }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Endpoint Usage
+            </CardTitle>
+            <CardDescription>Calls by endpoint</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={endpointUsageData}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="endpoint" className="text-xs" />
+                <YAxis className="text-xs" />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px'
+                  }}
+                />
+                <Bar dataKey="calls" fill="hsl(var(--primary))" radius={[8, 8, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
       <Card>
         <CardHeader>
@@ -166,22 +247,25 @@ const ApiTokens = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle>API Usage</CardTitle>
-          <CardDescription>Monitor your API consumption</CardDescription>
+          <CardTitle>Usage Summary</CardTitle>
+          <CardDescription>API consumption overview</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid md:grid-cols-3 gap-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Requests Today</p>
-              <p className="text-3xl font-bold">1,234</p>
+              <p className="text-3xl font-bold">2,100</p>
+              <p className="text-xs text-green-600">+12% from yesterday</p>
             </div>
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Requests This Month</p>
               <p className="text-3xl font-bold">45,678</p>
+              <p className="text-xs text-green-600">+8% from last month</p>
             </div>
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Success Rate</p>
               <p className="text-3xl font-bold">99.8%</p>
+              <p className="text-xs text-muted-foreground">Last 30 days</p>
             </div>
           </div>
         </CardContent>

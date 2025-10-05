@@ -23,7 +23,7 @@ const DashboardSidebar = () => {
 
   const userItems = [
     { title: 'Generate Images', url: '/dashboard/generate', icon: Sparkles },
-    { title: 'API Tokens', url: '/dashboard/api', icon: Key },
+    { title: 'API', url: '/dashboard/api', icon: Key },
     { title: 'Balance & Top-up', url: '/dashboard/balance', icon: Wallet },
     { title: 'Documentation', url: '/docs', icon: BookOpen },
   ];
