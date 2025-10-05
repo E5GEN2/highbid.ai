@@ -125,7 +125,14 @@ export function CryptoPaymentModal({
     try {
       const supabase = createClient();
 
-      await supabase.from('transactions').insert({
+      console.log('Creating transaction record:', {
+        user_id: userId,
+        amount: amount,
+        payment_id: payment.payment_id,
+        payment_url: payment.invoice_url
+      });
+
+      const { data, error } = await supabase.from('transactions').insert({
         user_id: userId,
         type: 'credit',
         amount: amount,
@@ -134,6 +141,12 @@ export function CryptoPaymentModal({
         payment_url: payment.invoice_url,
         status: 'pending'
       });
+
+      if (error) {
+        console.error('Transaction insert error:', error);
+      } else {
+        console.log('Transaction created successfully:', data);
+      }
     } catch (error) {
       console.error('Error creating transaction record:', error);
     }
