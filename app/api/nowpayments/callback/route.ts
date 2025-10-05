@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-client';
+import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 
 interface NowPaymentsWebhook {
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Log the webhook for debugging
     console.log('NowPayments webhook received:', webhook);
+
 
     // Verify webhook signature
     const signature = request.headers.get('x-nowpayments-sig');
@@ -65,7 +66,10 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
       return;
     }
 
-    const supabase = createClient();
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     // Update user balance using the database function
     const { data: newBalance, error: balanceError } = await supabase
@@ -105,7 +109,10 @@ async function processFailedPayment(webhook: NowPaymentsWebhook) {
     const userId = extractUserIdFromOrderId(webhook.order_id);
     if (!userId) return;
 
-    const supabase = createClient();
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
 
     // Record failed transaction
     const { error } = await supabase

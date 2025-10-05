@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { CryptoPaymentModal } from '@/components/CryptoPaymentModal';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
+import { nowPayments } from '@/lib/nowpayments';
 
 export default function Balance() {
   const { toast } = useToast();
