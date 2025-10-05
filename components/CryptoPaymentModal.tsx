@@ -130,7 +130,7 @@ export function CryptoPaymentModal({
   const displayCurrencies = searchQuery ? filteredCurrencies : currencies;
 
 
-  const createTransactionRecord = async (payment: any) => {
+  const createTransactionRecord = async (payment: any, orderId: string) => {
     try {
       const supabase = createClient();
 
@@ -143,6 +143,7 @@ export function CryptoPaymentModal({
         amount: amount,
         payment_id: paymentId,
         payment_url: payment.invoice_url,
+        order_id: orderId,
         full_payment_response: payment
       });
 
@@ -150,7 +151,7 @@ export function CryptoPaymentModal({
         user_id: userId,
         type: 'credit',
         amount: amount,
-        description: `Crypto top-up: $${amount} (${selectedCurrency.toUpperCase()})`,
+        description: `Crypto top-up: $${amount} (${selectedCurrency.toUpperCase()}) - Order: ${orderId}`,
         payment_id: paymentId, // Initial invoice ID, will be updated by webhook
         payment_url: payment.invoice_url,
         status: 'pending'
@@ -183,11 +184,13 @@ export function CryptoPaymentModal({
 
     setLoading(true);
     try {
+      const orderId = `topup-${Date.now()}-${userId}`;
+
       const payment = await nowPayments.createInvoice({
         price_amount: amount,
         price_currency: 'usd',
         pay_currency: selectedCurrency,
-        order_id: `topup-${Date.now()}-${userId}`,
+        order_id: orderId,
         order_description: `Balance top-up: $${amount}`,
       });
 
@@ -196,8 +199,8 @@ export function CryptoPaymentModal({
       setPaymentData(payment);
       setStep('payment');
 
-      // Create transaction record
-      await createTransactionRecord(payment);
+      // Create transaction record with the same order_id
+      await createTransactionRecord(payment, orderId);
 
       // Open invoice URL in new tab if available
       if (payment.invoice_url) {

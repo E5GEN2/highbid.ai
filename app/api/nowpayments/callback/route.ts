@@ -93,15 +93,8 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
       console.log(`Updated balance for user ${userId}: $${newBalance}`);
     }
 
-    // Find transaction by order_id since payment_id is only available after payment
+    // Find transaction by order_id in description since order_id field may not exist yet
     console.log(`🔍 Looking for transaction with order_id: ${webhook.order_id}`);
-
-    // Extract order timestamp from order_id to match with transaction created around that time
-    const orderTimestamp = webhook.order_id.split('-')[1];
-    const orderTime = new Date(parseInt(orderTimestamp));
-    const timeBuffer = 5 * 60 * 1000; // 5 minutes buffer
-    const startTime = new Date(orderTime.getTime() - timeBuffer);
-    const endTime = new Date(orderTime.getTime() + timeBuffer);
 
     const { data: matchingTransactions, error: findError } = await supabase
       .from('transactions')
@@ -109,23 +102,22 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
       .eq('user_id', userId)
       .eq('status', 'pending')
       .eq('amount', webhook.price_amount)
-      .gte('created_at', startTime.toISOString())
-      .lte('created_at', endTime.toISOString());
+      .like('description', `%${webhook.order_id}%`);
 
     if (findError) {
-      console.error('❌ Error finding transaction by order criteria:', findError);
+      console.error('❌ Error finding transaction by order_id:', findError);
     } else {
       console.log(`📋 Found ${matchingTransactions?.length || 0} matching transactions:`, matchingTransactions);
     }
 
-    // Update transaction status using the best match
+    // Update the first matching transaction (should be unique due to order_id)
     const transactionToUpdate = matchingTransactions?.[0];
     if (transactionToUpdate) {
       const { data: updateData, error: transactionError } = await supabase
         .from('transactions')
         .update({
           status: 'completed',
-          payment_id: webhook.payment_id, // Store the final payment_id from webhook
+          payment_id: webhook.payment_id.toString(), // Store the final payment_id from webhook
           updated_at: new Date().toISOString()
         })
         .eq('id', transactionToUpdate.id)
@@ -138,6 +130,16 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
       }
     } else {
       console.log(`⚠️ No matching transaction found for order: ${webhook.order_id}`);
+
+      // Debug: show recent transactions
+      const { data: recentTransactions } = await supabase
+        .from('transactions')
+        .select('id, description, amount, status, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      console.log('📋 Recent transactions for debugging:', recentTransactions);
     }
 
 
