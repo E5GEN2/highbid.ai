@@ -25,7 +25,9 @@ export async function POST(request: NextRequest) {
     const webhook: NowPaymentsWebhook = JSON.parse(body);
 
     // Log the webhook for debugging
-    console.log('NowPayments webhook received:', webhook);
+    console.log('🔔 NowPayments webhook received:', JSON.stringify(webhook, null, 2));
+    console.log('🔄 Payment status:', webhook.payment_status);
+    console.log('📝 Order ID:', webhook.order_id);
 
 
     // Verify webhook signature
@@ -44,9 +46,13 @@ export async function POST(request: NextRequest) {
 
     // Only process successful payments
     if (webhook.payment_status === 'finished' || webhook.payment_status === 'confirmed') {
+      console.log('✅ Processing successful payment');
       await processSuccessfulPayment(webhook);
     } else if (webhook.payment_status === 'failed' || webhook.payment_status === 'refunded') {
+      console.log('❌ Processing failed payment');
       await processFailedPayment(webhook);
+    } else {
+      console.log('⏳ Payment status not processed:', webhook.payment_status);
     }
 
     // Always respond with 200 to acknowledge receipt
