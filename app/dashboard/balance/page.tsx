@@ -20,7 +20,7 @@ export default function Balance() {
   const [currentBalance, setCurrentBalance] = useState(0);
   const [showCryptoModal, setShowCryptoModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [transactions, setTransactions] = useState([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
 
   useEffect(() => {
     loadUserBalance();
