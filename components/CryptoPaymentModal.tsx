@@ -129,10 +129,6 @@ export function CryptoPaymentModal({
   // Auto-expand to all currencies when user starts searching
   const displayCurrencies = searchQuery ? filteredCurrencies : currencies;
 
-  // Debug: Log current state
-  console.log('Search Query:', searchQuery);
-  console.log('All Currencies Count:', allCurrencies.length);
-  console.log('Display Currencies Count:', displayCurrencies.length);
 
   const createTransactionRecord = async (payment: any) => {
     try {
@@ -171,6 +167,7 @@ export function CryptoPaymentModal({
   const handleCreatePayment = async () => {
     // If payment already exists, just open it and go to payment step
     if (paymentData?.invoice_url) {
+      console.log('Reusing existing payment:', paymentData.invoice_url);
       setStep('payment');
       window.open(paymentData.invoice_url, '_blank');
       toast({
@@ -179,6 +176,8 @@ export function CryptoPaymentModal({
       });
       return;
     }
+
+    console.log('Creating new payment - no existing payment data');
 
     setLoading(true);
     try {
