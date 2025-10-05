@@ -1,28 +1,67 @@
 'use client'
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Image, DollarSign, Activity, LogOut } from 'lucide-react';
+import { Users, Image, DollarSign, Activity, LogOut, Loader2 } from 'lucide-react';
+import { getUserStats, type UserData } from '@/lib/admin-actions';
 
 export default function AdminDashboard() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    recentUsers: 0,
+    activeUsers: 0,
+    users: [] as UserData[]
+  });
 
   useEffect(() => {
     // Check if admin is authenticated
     const adminAuth = sessionStorage.getItem('adminAuth');
     if (adminAuth !== 'true') {
       router.push('/admin');
+      return;
     }
+
+    // Fetch user statistics
+    fetchUserData();
   }, [router]);
+
+  const fetchUserData = async () => {
+    try {
+      const data = await getUserStats();
+      setStats(data);
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = () => {
     sessionStorage.removeItem('adminAuth');
     sessionStorage.removeItem('adminUser');
     router.push('/admin');
+  };
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const getUserStatus = (user: UserData) => {
+    if (!user.email_confirmed_at) return 'pending';
+    if (!user.last_sign_in_at) return 'inactive';
+    const lastSignIn = new Date(user.last_sign_in_at);
+    const daysSinceSignIn = Math.floor((Date.now() - lastSignIn.getTime()) / (1000 * 60 * 60 * 24));
+    return daysSinceSignIn < 7 ? 'active' : 'inactive';
   };
 
   return (
@@ -48,8 +87,35 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">2,847</p>
-              <p className="text-xs text-muted-foreground mt-1">+12% from last month</p>
+              {loading ? (
+                <Loader2 className="h-8 w-8 animate-spin" />
+              ) : (
+                <>
+                  <p className="text-3xl font-bold">{stats.totalUsers.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats.recentUsers > 0 ? `+${stats.recentUsers} this month` : 'No new users this month'}
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Active Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <Loader2 className="h-8 w-8 animate-spin" />
+              ) : (
+                <>
+                  <p className="text-3xl font-bold">{stats.activeUsers.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Last 30 days</p>
+                </>
+              )}
             </CardContent>
           </Card>
 
@@ -61,8 +127,8 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">124.5K</p>
-              <p className="text-xs text-muted-foreground mt-1">+8% from last month</p>
+              <p className="text-3xl font-bold">0</p>
+              <p className="text-xs text-muted-foreground mt-1">Coming soon</p>
             </CardContent>
           </Card>
 
@@ -74,21 +140,8 @@ export default function AdminDashboard() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">$42.3K</p>
-              <p className="text-xs text-muted-foreground mt-1">+15% from last month</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Activity className="h-4 w-4" />
-                API Uptime
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold">99.9%</p>
-              <p className="text-xs text-muted-foreground mt-1">Last 30 days</p>
+              <p className="text-3xl font-bold">$0</p>
+              <p className="text-xs text-muted-foreground mt-1">Coming soon</p>
             </CardContent>
           </Card>
         </div>
@@ -99,38 +152,55 @@ export default function AdminDashboard() {
             <CardDescription>Latest user registrations and activity</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[
-                  { name: 'John Doe', email: 'john@example.com', role: 'user', joined: '2025-01-15', status: 'active' },
-                  { name: 'Jane Smith', email: 'jane@example.com', role: 'user', joined: '2025-01-14', status: 'active' },
-                  { name: 'Bob Johnson', email: 'bob@example.com', role: 'user', joined: '2025-01-13', status: 'inactive' },
-                ].map((user, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{user.role}</Badge>
-                    </TableCell>
-                    <TableCell>{user.joined}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.status === 'active' ? 'default' : 'secondary'}>
-                        {user.status}
-                      </Badge>
-                    </TableCell>
+            {loading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin" />
+              </div>
+            ) : stats.users.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No users registered yet
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead>Last Active</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {stats.users.map((user) => {
+                    const status = getUserStatus(user);
+                    return (
+                      <TableRow key={user.id}>
+                        <TableCell className="font-mono text-xs">
+                          {user.id.slice(0, 8)}...
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{formatDate(user.created_at)}</TableCell>
+                        <TableCell>
+                          {user.last_sign_in_at ? formatDate(user.last_sign_in_at) : 'Never'}
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              status === 'active' ? 'default' :
+                              status === 'pending' ? 'outline' :
+                              'secondary'
+                            }
+                          >
+                            {status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
           </CardContent>
         </Card>
       </div>
