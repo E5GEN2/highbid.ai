@@ -1,22 +1,38 @@
+'use client'
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Code, BookOpen, Zap } from 'lucide-react';
+import { Code, BookOpen, Zap, ArrowLeft } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function Docs() {
+  const { user } = useAuth();
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <Link href="/" className="text-2xl font-bold">Highbid.ai</Link>
           <div className="flex gap-4">
-            <Button variant="ghost" asChild>
-              <Link href="/auth/login">Login</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/auth/signup">Get Started</Link>
-            </Button>
+            {user ? (
+              <Button variant="ghost" asChild>
+                <Link href="/dashboard/generate">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Dashboard
+                </Link>
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" asChild>
+                  <Link href="/auth/login">Login</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/auth/signup">Get Started</Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </header>
