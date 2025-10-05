@@ -86,6 +86,22 @@ export function CryptoPaymentModal({
     }
   };
 
+  const getCurrencyName = (code: string) => {
+    const names: Record<string, string> = {
+      btc: 'Bitcoin',
+      eth: 'Ethereum',
+      usdt: 'Tether (USDT)',
+      usdc: 'USD Coin',
+      bnb: 'Binance Coin',
+      xrp: 'Ripple',
+      doge: 'Dogecoin',
+      ltc: 'Litecoin',
+      ada: 'Cardano',
+      matic: 'Polygon',
+    };
+    return names[code] || code.toUpperCase();
+  };
+
   const filteredCurrencies = searchQuery
     ? allCurrencies.filter(currency =>
         currency.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -204,22 +220,6 @@ export function CryptoPaymentModal({
     setStep('select');
     setPaymentData(null);
     onClose();
-  };
-
-  const getCurrencyName = (code: string) => {
-    const names: Record<string, string> = {
-      btc: 'Bitcoin',
-      eth: 'Ethereum',
-      usdt: 'Tether (USDT)',
-      usdc: 'USD Coin',
-      bnb: 'Binance Coin',
-      xrp: 'Ripple',
-      doge: 'Dogecoin',
-      ltc: 'Litecoin',
-      ada: 'Cardano',
-      matic: 'Polygon',
-    };
-    return names[code] || code.toUpperCase();
   };
 
   return (
