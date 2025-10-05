@@ -151,7 +151,7 @@ export function CryptoPaymentModal({
         user_id: userId,
         type: 'credit',
         amount: amount,
-        description: `Crypto top-up: $${amount} (${selectedCurrency.toUpperCase()}) - Order: ${orderId}`,
+        description: `$${amount} ${selectedCurrency.toUpperCase()} top-up ${orderId}`,
         payment_id: paymentId, // Initial invoice ID, will be updated by webhook
         payment_url: payment.invoice_url,
         status: 'pending'
