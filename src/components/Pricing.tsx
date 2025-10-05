@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Check } from "lucide-react";
 
 const plans = [
@@ -98,8 +99,9 @@ const Pricing = () => {
               <Button 
                 variant={plan.featured ? "hero" : "glass"} 
                 className="w-full"
+                asChild
               >
-                {plan.cta}
+                <Link to="/signup">{plan.cta}</Link>
               </Button>
             </div>
           ))}

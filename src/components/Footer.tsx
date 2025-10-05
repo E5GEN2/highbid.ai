@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { Github, Twitter, Linkedin } from "lucide-react";
 
 const Footer = () => {
@@ -17,20 +18,18 @@ const Footer = () => {
           <div>
             <h4 className="font-semibold mb-4">Product</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">API Documentation</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Use Cases</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Changelog</a></li>
+              <li><Link to="/docs" className="hover:text-primary transition-colors">API Documentation</Link></li>
+              <li><a href="#pricing" className="hover:text-primary transition-colors">Pricing</a></li>
+              <li><a href="#features" className="hover:text-primary transition-colors">Features</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Company</h4>
+            <h4 className="font-semibold mb-4">Account</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li><a href="#" className="hover:text-primary transition-colors">About</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Contact</a></li>
+              <li><Link to="/login" className="hover:text-primary transition-colors">Login</Link></li>
+              <li><Link to="/signup" className="hover:text-primary transition-colors">Sign Up</Link></li>
+              <li><Link to="/dashboard/generate" className="hover:text-primary transition-colors">Dashboard</Link></li>
             </ul>
           </div>
 
@@ -39,7 +38,6 @@ const Footer = () => {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><a href="#" className="hover:text-primary transition-colors">Privacy Policy</a></li>
               <li><a href="#" className="hover:text-primary transition-colors">Terms of Service</a></li>
-              <li><a href="#" className="hover:text-primary transition-colors">Cookie Policy</a></li>
             </ul>
           </div>
         </div>
