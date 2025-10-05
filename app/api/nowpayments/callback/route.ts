@@ -93,7 +93,7 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
       console.log(`Updated balance for user ${userId}: $${newBalance}`);
     }
 
-    // Find transaction by order_id in description since order_id field may not exist yet
+    // Find transaction by order_id stored in payment_id field
     console.log(`🔍 Looking for transaction with order_id: ${webhook.order_id}`);
 
     const { data: matchingTransactions, error: findError } = await supabase
@@ -102,7 +102,7 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
       .eq('user_id', userId)
       .eq('status', 'pending')
       .eq('amount', webhook.price_amount)
-      .like('description', `%${webhook.order_id}%`);
+      .eq('payment_id', webhook.order_id);
 
     if (findError) {
       console.error('❌ Error finding transaction by order_id:', findError);

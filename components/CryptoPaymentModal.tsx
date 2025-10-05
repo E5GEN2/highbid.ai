@@ -147,12 +147,13 @@ export function CryptoPaymentModal({
         full_payment_response: payment
       });
 
+      // Store order_id in payment_id initially for webhook matching, will be replaced with real payment_id
       const { data, error } = await supabase.from('transactions').insert({
         user_id: userId,
         type: 'credit',
         amount: amount,
-        description: `$${amount} ${selectedCurrency.toUpperCase()} top-up ${orderId}`,
-        payment_id: paymentId, // Initial invoice ID, will be updated by webhook
+        description: `$${amount} ${selectedCurrency.toUpperCase()} top-up`,
+        payment_id: orderId, // Store order_id here for webhook matching
         payment_url: payment.invoice_url,
         status: 'pending'
       });
