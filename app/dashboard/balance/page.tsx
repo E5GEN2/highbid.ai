@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Wallet, CreditCard, TrendingUp, Bitcoin } from 'lucide-react';
+import { Wallet, CreditCard, TrendingUp, Bitcoin, ExternalLink } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { CryptoPaymentModal } from '@/components/CryptoPaymentModal';
 import { useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase-client';
@@ -123,6 +124,18 @@ export default function Balance() {
     // Reload the actual balance from database
     loadUserBalance();
     loadTransactions();
+  };
+
+  const getStatusBadge = (status: string) => {
+    const statusConfig = {
+      pending: { variant: 'secondary' as const, label: 'Pending' },
+      completed: { variant: 'default' as const, label: 'Completed' },
+      failed: { variant: 'destructive' as const, label: 'Failed' },
+      cancelled: { variant: 'outline' as const, label: 'Cancelled' }
+    };
+
+    const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
+    return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
   return (
@@ -260,11 +273,25 @@ export default function Balance() {
             ) : (
               transactions.map((transaction, i) => (
                 <div key={transaction.id || i} className="flex justify-between items-center py-3 border-b last:border-0">
-                  <div>
-                    <p className="font-medium">{transaction.description || 'Transaction'}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(transaction.created_at).toLocaleDateString()}
-                    </p>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="font-medium">{transaction.description || 'Transaction'}</p>
+                      {transaction.status && getStatusBadge(transaction.status)}
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <span>{new Date(transaction.created_at).toLocaleDateString()}</span>
+                      {transaction.payment_url && transaction.status === 'pending' && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => window.open(transaction.payment_url, '_blank')}
+                        >
+                          <ExternalLink className="mr-1 h-3 w-3" />
+                          Continue Payment
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <p className={`font-semibold ${transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'}`}>
                     {transaction.type === 'credit' ? '+' : '-'}${Math.abs(transaction.amount).toFixed(2)}

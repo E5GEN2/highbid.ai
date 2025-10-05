@@ -81,18 +81,14 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
       console.log(`Updated balance for user ${userId}: $${newBalance}`);
     }
 
-    // Record transaction
+    // Update existing transaction status
     const { error: transactionError } = await supabase
       .from('transactions')
-      .insert({
-        user_id: userId,
-        type: 'credit',
-        amount: webhook.price_amount,
-        description: `Top-up via ${webhook.pay_currency.toUpperCase()}`,
-        payment_id: webhook.payment_id,
+      .update({
         status: 'completed',
-        created_at: new Date().toISOString()
-      });
+        updated_at: new Date().toISOString()
+      })
+      .eq('payment_id', webhook.payment_id);
 
     if (transactionError) {
       console.error('Error recording transaction:', transactionError);

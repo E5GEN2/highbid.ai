@@ -77,6 +77,24 @@ export function CryptoPaymentModal({
     }
   };
 
+  const createTransactionRecord = async (payment: any) => {
+    try {
+      const supabase = createClient();
+
+      await supabase.from('transactions').insert({
+        user_id: userId,
+        type: 'credit',
+        amount: amount,
+        description: `Crypto top-up: $${amount} (${selectedCurrency.toUpperCase()})`,
+        payment_id: payment.payment_id,
+        payment_url: payment.invoice_url,
+        status: 'pending'
+      });
+    } catch (error) {
+      console.error('Error creating transaction record:', error);
+    }
+  };
+
   const handleCreatePayment = async () => {
     // If payment already exists, just open it and go to payment step
     if (paymentData?.invoice_url) {
@@ -101,6 +119,9 @@ export function CryptoPaymentModal({
 
       setPaymentData(payment);
       setStep('payment');
+
+      // Create transaction record
+      await createTransactionRecord(payment);
 
       // Open invoice URL in new tab if available
       if (payment.invoice_url) {
