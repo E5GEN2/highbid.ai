@@ -1,25 +1,65 @@
 'use client'
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Wallet, CreditCard, TrendingUp } from 'lucide-react';
+import { Wallet, CreditCard, TrendingUp, Bitcoin } from 'lucide-react';
+import { CryptoPaymentModal } from '@/components/CryptoPaymentModal';
+import { useSearchParams } from 'next/navigation';
 
 export default function Balance() {
   const { toast } = useToast();
+  const searchParams = useSearchParams();
   const [selectedAmount, setSelectedAmount] = useState('50');
   const [customAmount, setCustomAmount] = useState('');
-  const currentBalance = 125.50;
+  const [currentBalance, setCurrentBalance] = useState(125.50);
+  const [showCryptoModal, setShowCryptoModal] = useState(false);
+
+  useEffect(() => {
+    // Check for payment status from URL params
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast({
+        title: 'Payment Successful',
+        description: 'Your balance has been updated',
+      });
+      // Remove payment param from URL
+      window.history.replaceState({}, '', '/dashboard/balance');
+    } else if (paymentStatus === 'cancelled') {
+      toast({
+        title: 'Payment Cancelled',
+        description: 'Your top-up was cancelled',
+        variant: 'destructive',
+      });
+      window.history.replaceState({}, '', '/dashboard/balance');
+    }
+  }, [searchParams, toast]);
 
   const handleTopUp = () => {
-    const amount = selectedAmount === 'custom' ? customAmount : selectedAmount;
+    const amount = parseFloat(selectedAmount === 'custom' ? customAmount : selectedAmount);
+
+    if (!amount || amount < 10) {
+      toast({
+        title: 'Invalid Amount',
+        description: 'Minimum top-up amount is $10',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setShowCryptoModal(true);
+  };
+
+  const handlePaymentSuccess = () => {
+    const amount = parseFloat(selectedAmount === 'custom' ? customAmount : selectedAmount);
+    setCurrentBalance(prev => prev + amount);
     toast({
-      title: 'Success',
-      description: `$${amount} added to your balance`,
+      title: 'Balance Updated',
+      description: `$${amount} has been added to your balance`,
     });
   };
 
@@ -170,6 +210,13 @@ export default function Balance() {
           </div>
         </CardContent>
       </Card>
+
+      <CryptoPaymentModal
+        isOpen={showCryptoModal}
+        onClose={() => setShowCryptoModal(false)}
+        amount={parseFloat(selectedAmount === 'custom' ? customAmount : selectedAmount)}
+        onSuccess={handlePaymentSuccess}
+      />
     </div>
   );
 }

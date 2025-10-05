@@ -1,0 +1,302 @@
+'use client'
+
+import { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Loader2, Copy, ExternalLink, CheckCircle } from 'lucide-react';
+import { nowPayments } from '@/lib/nowpayments';
+import { createClient } from '@/lib/supabase-client';
+
+interface CryptoPaymentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  amount: number;
+  onSuccess?: () => void;
+}
+
+export function CryptoPaymentModal({
+  isOpen,
+  onClose,
+  amount,
+  onSuccess,
+}: CryptoPaymentModalProps) {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [selectedCurrency, setSelectedCurrency] = useState('btc');
+  const [paymentData, setPaymentData] = useState<any>(null);
+  const [currencies, setCurrencies] = useState<string[]>(['btc', 'eth', 'usdt', 'usdc']);
+  const [step, setStep] = useState<'select' | 'payment' | 'processing'>('select');
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      loadCurrencies();
+      getCurrentUser();
+    }
+  }, [isOpen]);
+
+  const getCurrentUser = async () => {
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    } catch (error) {
+      console.error('Error getting current user:', error);
+    }
+  };
+
+  const loadCurrencies = async () => {
+    try {
+      const availableCurrencies = await nowPayments.getAvailableCurrencies();
+      // Filter for popular currencies
+      const popularCurrencies = ['btc', 'eth', 'usdt', 'usdc', 'bnb', 'xrp', 'doge', 'ltc', 'ada', 'matic'];
+      const filtered = availableCurrencies.filter(c => popularCurrencies.includes(c));
+      if (filtered.length > 0) {
+        setCurrencies(filtered);
+      }
+    } catch (error) {
+      console.error('Error loading currencies:', error);
+    }
+  };
+
+  const handleCreatePayment = async () => {
+    setLoading(true);
+    try {
+      const payment = await nowPayments.createInvoice({
+        price_amount: amount,
+        price_currency: 'usd',
+        pay_currency: selectedCurrency,
+        order_id: `topup-${Date.now()}-${userId}`,
+        order_description: `Balance top-up: $${amount}`,
+      });
+
+      setPaymentData(payment);
+      setStep('payment');
+
+      // Open invoice URL in new tab if available
+      if (payment.invoice_url) {
+        window.open(payment.invoice_url, '_blank');
+      }
+
+      toast({
+        title: 'Payment Created',
+        description: 'Complete your payment in the opened window',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create payment',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopyAddress = () => {
+    if (paymentData?.pay_address) {
+      navigator.clipboard.writeText(paymentData.pay_address);
+      toast({
+        title: 'Copied',
+        description: 'Payment address copied to clipboard',
+      });
+    }
+  };
+
+  const checkPaymentStatus = async () => {
+    if (!paymentData?.payment_id) return;
+
+    try {
+      const status = await nowPayments.getPaymentStatus(paymentData.payment_id);
+
+      if (status.payment_status === 'finished' || status.payment_status === 'confirmed') {
+        setStep('processing');
+        toast({
+          title: 'Payment Successful',
+          description: 'Your balance will be updated shortly',
+        });
+
+        // Update balance in database here
+        setTimeout(() => {
+          onSuccess?.();
+          handleClose();
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error checking payment status:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (step === 'payment' && paymentData?.payment_id) {
+      const interval = setInterval(checkPaymentStatus, 5000); // Check every 5 seconds
+      return () => clearInterval(interval);
+    }
+  }, [step, paymentData]);
+
+  const handleClose = () => {
+    setStep('select');
+    setPaymentData(null);
+    onClose();
+  };
+
+  const getCurrencyName = (code: string) => {
+    const names: Record<string, string> = {
+      btc: 'Bitcoin',
+      eth: 'Ethereum',
+      usdt: 'Tether (USDT)',
+      usdc: 'USD Coin',
+      bnb: 'Binance Coin',
+      xrp: 'Ripple',
+      doge: 'Dogecoin',
+      ltc: 'Litecoin',
+      ada: 'Cardano',
+      matic: 'Polygon',
+    };
+    return names[code] || code.toUpperCase();
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {step === 'select' && 'Select Cryptocurrency'}
+            {step === 'payment' && 'Complete Payment'}
+            {step === 'processing' && 'Processing Payment'}
+          </DialogTitle>
+          <DialogDescription>
+            {step === 'select' && `Top up $${amount} using cryptocurrency`}
+            {step === 'payment' && 'Send payment to the address below'}
+            {step === 'processing' && 'Your payment is being processed'}
+          </DialogDescription>
+        </DialogHeader>
+
+        {step === 'select' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Select Cryptocurrency</Label>
+              <Select value={selectedCurrency} onValueChange={setSelectedCurrency}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {currencies.map((currency) => (
+                    <SelectItem key={currency} value={currency}>
+                      {getCurrencyName(currency)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="bg-muted p-4 rounded-lg">
+              <p className="text-sm text-muted-foreground mb-1">You will pay</p>
+              <p className="text-2xl font-bold">${amount} USD</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                in {getCurrencyName(selectedCurrency)}
+              </p>
+            </div>
+
+            <Button
+              onClick={handleCreatePayment}
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating Payment...
+                </>
+              ) : (
+                'Continue to Payment'
+              )}
+            </Button>
+          </div>
+        )}
+
+        {step === 'payment' && paymentData && (
+          <div className="space-y-4">
+            {paymentData.invoice_url ? (
+              <div className="space-y-4">
+                <div className="bg-muted p-4 rounded-lg text-center">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Payment window opened in new tab
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => window.open(paymentData.invoice_url, '_blank')}
+                  >
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Open Payment Page
+                  </Button>
+                </div>
+
+                <div className="text-center text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+                  Waiting for payment confirmation...
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label>Send exactly</Label>
+                  <div className="bg-muted p-3 rounded-lg font-mono text-sm">
+                    {paymentData.pay_amount} {paymentData.pay_currency?.toUpperCase()}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>To address</Label>
+                  <div className="bg-muted p-3 rounded-lg">
+                    <p className="font-mono text-xs break-all">{paymentData.pay_address}</p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleCopyAddress}
+                      className="mt-2"
+                    >
+                      <Copy className="mr-2 h-4 w-4" />
+                      Copy Address
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="text-center text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin inline mr-2" />
+                  Waiting for payment confirmation...
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {step === 'processing' && (
+          <div className="py-8 text-center">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <p className="text-lg font-medium">Payment Received!</p>
+            <p className="text-sm text-muted-foreground mt-2">
+              Your balance is being updated...
+            </p>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
