@@ -92,16 +92,31 @@ async function processSuccessfulPayment(webhook: NowPaymentsWebhook) {
     }
 
     // Update existing transaction status
-    const { error: transactionError } = await supabase
+    console.log(`🔄 Updating transaction with payment_id: ${webhook.payment_id}`);
+
+    const { data: updateData, error: transactionError } = await supabase
       .from('transactions')
       .update({
         status: 'completed',
         updated_at: new Date().toISOString()
       })
-      .eq('payment_id', webhook.payment_id);
+      .eq('payment_id', webhook.payment_id)
+      .select();
 
     if (transactionError) {
-      console.error('Error recording transaction:', transactionError);
+      console.error('❌ Error updating transaction:', transactionError);
+    } else if (updateData && updateData.length > 0) {
+      console.log(`✅ Transaction updated successfully:`, updateData[0]);
+    } else {
+      console.log(`⚠️ No transaction found with payment_id: ${webhook.payment_id}`);
+
+      // Check what transactions exist for this user
+      const { data: allTransactions } = await supabase
+        .from('transactions')
+        .select('payment_id, status, description')
+        .eq('user_id', userId);
+
+      console.log('📋 All transactions for user:', allTransactions);
     }
 
     console.log(`Successfully processed payment for user ${userId}: +$${webhook.price_amount}`);
