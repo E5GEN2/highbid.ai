@@ -1,5 +1,6 @@
-import { Navigate } from 'react-router-dom';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffect } from 'react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -8,6 +9,21 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
   const { user, isLoading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isLoading) {
+      if (!user) {
+        router.push('/auth/login');
+        return;
+      }
+
+      if (requireAdmin && user.role !== 'admin') {
+        router.push('/dashboard');
+        return;
+      }
+    }
+  }, [user, isLoading, requireAdmin, router]);
 
   if (isLoading) {
     return (
@@ -18,11 +34,11 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return null; // Will redirect via useEffect
   }
 
   if (requireAdmin && user.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
+    return null; // Will redirect via useEffect
   }
 
   return <>{children}</>;
